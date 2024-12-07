@@ -51,11 +51,17 @@
             image-rendering: -webkit-optimize-contrast;
         }
         .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            width: 100%;
             padding: 10px;
             background-color: #f0f0f0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
         }
         .btn {
             background-color: #4CAF50;
@@ -83,6 +89,39 @@
             white-space: pre-wrap;
             word-break: break-word;
         }
+        .buttons-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .page-info {
+            margin: 0 10px;
+            white-space: nowrap;
+        }
+        @media screen and (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .buttons-group {
+                justify-content: center;
+            }
+            
+            .scale-group {
+                text-align: center;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .page-info {
+                margin: 5px 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -94,17 +133,19 @@
             <canvas id="pdf-render"></canvas>
             
             <div class="controls">
-                <div>
+                <div class="buttons-group">
+                    <button id="first-page" class="btn">第一页</button>
                     <button id="prev-page" class="btn">上一页</button>
-                    <span>第 <span id="page-num">0</span> 页，共 <span id="page-count">0</span> 页</span>
+                    <span class="page-info">第 <span id="page-num">0</span> 页，共 <span id="page-count">0</span> 页</span>
                     <button id="next-page" class="btn">下一页</button>
+                    <button id="last-page" class="btn">最后页</button>
                 </div>
-                <div>
+                <div class="scale-group">
                     <label>缩放：
                         <select id="scale-select">
-                            <option value="auto">自适应</option>
+                            <option value="page-width">适合页面宽度</option>
                             <option value="0.5">50%</option>
-                            <option value="1" selected>100%</option>
+                            <option value="1">100%</option>
                             <option value="1.5">150%</option>
                             <option value="2">200%</option>
                         </select>
@@ -131,6 +172,8 @@
         const prevPage = document.getElementById('prev-page');
         const nextPage = document.getElementById('next-page');
         const scaleSelect = document.getElementById('scale-select');
+        const firstPage = document.getElementById('first-page');
+        const lastPage = document.getElementById('last-page');
 
         // PDF 阅读器状态变量
         let pdfDoc = null;
@@ -189,14 +232,12 @@
 
                 pageNum.textContent = num;
                 pageCount.textContent = pdfDoc.numPages;
+                updateButtonStates(num);
             }).catch(function(error) {
                 console.error('获取页面错误:', error);
                 errorMsg.textContent = `获取页面错误: ${error.message}`;
                 errorMsg.style.display = 'block';
             });
-
-            prevPage.disabled = currentPage <= 1;
-            nextPage.disabled = currentPage >= pdfDoc.numPages;
         }
 
         // 队列渲染页面
@@ -209,6 +250,18 @@
         }
 
         // 事件监听器
+        firstPage.addEventListener('click', function() {
+            if (currentPage === 1) return;
+            currentPage = 1;
+            queueRenderPage(currentPage);
+        });
+
+        lastPage.addEventListener('click', function() {
+            if (!pdfDoc || currentPage === pdfDoc.numPages) return;
+            currentPage = pdfDoc.numPages;
+            queueRenderPage(currentPage);
+        });
+
         prevPage.addEventListener('click', function() {
             if (currentPage <= 1) return;
             currentPage--;
@@ -226,6 +279,14 @@
                 queueRenderPage(currentPage);
             }
         });
+
+        // 修改按钮状态更新函数
+        function updateButtonStates(pageNum) {
+            firstPage.disabled = pageNum <= 1;
+            prevPage.disabled = pageNum <= 1;
+            nextPage.disabled = pageNum >= pdfDoc.numPages;
+            lastPage.disabled = pageNum >= pdfDoc.numPages;
+        }
 
         // 加载PDF
         console.log('尝试加载PDF文件:', pdfUrl);
