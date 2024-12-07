@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>土壤方舟建设及运营手册</title>
+    <title>PDF阅读器</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <style>
         * {
@@ -50,7 +50,9 @@
             padding: 10px;
             background-color: #f0f0f0;
             display: flex;
-            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
             align-items: center;
             position: sticky;
             bottom: 0;
@@ -108,6 +110,11 @@
                 padding: 5px;
             }
             
+            .buttons-group {
+                width: 100%;
+                justify-content: center;
+            }
+            
             .btn {
                 padding: 6px 10px;
                 font-size: 14px;
@@ -115,6 +122,10 @@
             
             .page-info {
                 margin: 5px 0;
+            }
+
+            #scale-select {
+                width: 100px;
             }
         }
     </style>
@@ -131,9 +142,20 @@
                 <div class="buttons-group">
                     <button id="first-page" class="btn">第一页</button>
                     <button id="prev-page" class="btn">上一页</button>
-                    <span class="page-info">第 <span id="page-num">0</span> 页，共 <span id="page-count">0</span> 页</span>
+                    <span class="page-info">第 <span id="page-num">0</span> 页���共 <span id="page-count">0</span> 页</span>
                     <button id="next-page" class="btn">下一页</button>
                     <button id="last-page" class="btn">最后页</button>
+                </div>
+                <div class="scale-group">
+                    <label>缩放：
+                        <select id="scale-select">
+                            <option value="page-width">适合页面宽度</option>
+                            <option value="0.5">50%</option>
+                            <option value="1">100%</option>
+                            <option value="1.5">150%</option>
+                            <option value="2">200%</option>
+                        </select>
+                    </label>
                 </div>
             </div>
         </div>
@@ -154,6 +176,7 @@
         const nextPage = document.getElementById('next-page');
         const firstPage = document.getElementById('first-page');
         const lastPage = document.getElementById('last-page');
+        const scaleSelect = document.getElementById('scale-select');
 
         let pdfDoc = null;
         let currentPage = 1;
@@ -166,11 +189,17 @@
                 const canvas = pdfRender;
                 const context = canvas.getContext('2d');
                 
-                // 计算适合容器宽度的缩放比例
+                let viewport;
                 const containerWidth = pdfContainer.clientWidth;
-                const pageWidth = page.getViewport({scale: 1.0}).width;
-                const scale = containerWidth / pageWidth;
-                const viewport = page.getViewport({ scale: scale });
+                
+                if (scaleSelect.value === 'page-width') {
+                    const pageWidth = page.getViewport({scale: 1.0}).width;
+                    const scale = containerWidth / pageWidth;
+                    viewport = page.getViewport({ scale: scale });
+                } else {
+                    const scale = parseFloat(scaleSelect.value);
+                    viewport = page.getViewport({ scale: scale });
+                }
 
                 const pixelRatio = window.devicePixelRatio || 1;
                 canvas.width = viewport.width * pixelRatio;
@@ -241,12 +270,17 @@
             queueRenderPage(currentPage);
         });
 
-        // 窗口大小改变时重新渲染
+        scaleSelect.addEventListener('change', function() {
+            if (pdfDoc) {
+                queueRenderPage(currentPage);
+            }
+        });
+
         let resizeTimeout;
         window.addEventListener('resize', function() {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(function() {
-                if (pdfDoc) {
+                if (pdfDoc && scaleSelect.value === 'page-width') {
                     queueRenderPage(currentPage);
                 }
             }, 100);
