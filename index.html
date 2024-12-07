@@ -118,8 +118,8 @@
         // PDF.js 配置
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
 
-        // 获取完整的PDF文件路径
-        const pdfUrl = window.location.href.replace(/\/[^/]*$/, '/') + 'document.pdf';
+        // 修改PDF文件URL为GitHub raw链接
+        const pdfUrl = 'https://raw.githubusercontent.com/Royalseal/pdf-reader/main/document.pdf';
 
         // 获取DOM元素
         const pdfContainer = document.getElementById('pdf-container');
