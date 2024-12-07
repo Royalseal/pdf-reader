@@ -50,9 +50,7 @@
             padding: 10px;
             background-color: #f0f0f0;
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             position: sticky;
             bottom: 0;
@@ -110,11 +108,6 @@
                 padding: 5px;
             }
             
-            .buttons-group {
-                width: 100%;
-                justify-content: center;
-            }
-            
             .btn {
                 padding: 6px 10px;
                 font-size: 14px;
@@ -122,10 +115,6 @@
             
             .page-info {
                 margin: 5px 0;
-            }
-
-            #scale-select {
-                width: 100px;
             }
         }
     </style>
@@ -146,17 +135,6 @@
                     <button id="next-page" class="btn">下一页</button>
                     <button id="last-page" class="btn">最后页</button>
                 </div>
-                <div class="scale-group">
-                    <label>缩放：
-                        <select id="scale-select">
-                            <option value="page-width">适合页面宽度</option>
-                            <option value="0.5">50%</option>
-                            <option value="1">100%</option>
-                            <option value="1.5">150%</option>
-                            <option value="2">200%</option>
-                        </select>
-                    </label>
-                </div>
             </div>
         </div>
     </div>
@@ -176,7 +154,6 @@
         const nextPage = document.getElementById('next-page');
         const firstPage = document.getElementById('first-page');
         const lastPage = document.getElementById('last-page');
-        const scaleSelect = document.getElementById('scale-select');
 
         let pdfDoc = null;
         let currentPage = 1;
@@ -189,17 +166,11 @@
                 const canvas = pdfRender;
                 const context = canvas.getContext('2d');
                 
-                let viewport;
+                // 计算适合容器宽度的缩放比例
                 const containerWidth = pdfContainer.clientWidth;
-                
-                if (scaleSelect.value === 'page-width') {
-                    const pageWidth = page.getViewport({scale: 1.0}).width;
-                    const scale = containerWidth / pageWidth;
-                    viewport = page.getViewport({ scale: scale });
-                } else {
-                    const scale = parseFloat(scaleSelect.value);
-                    viewport = page.getViewport({ scale: scale });
-                }
+                const pageWidth = page.getViewport({scale: 1.0}).width;
+                const scale = containerWidth / pageWidth;
+                const viewport = page.getViewport({ scale: scale });
 
                 const pixelRatio = window.devicePixelRatio || 1;
                 canvas.width = viewport.width * pixelRatio;
@@ -270,17 +241,12 @@
             queueRenderPage(currentPage);
         });
 
-        scaleSelect.addEventListener('change', function() {
-            if (pdfDoc) {
-                queueRenderPage(currentPage);
-            }
-        });
-
+        // 窗口大小改变时重新渲染
         let resizeTimeout;
         window.addEventListener('resize', function() {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(function() {
-                if (pdfDoc && scaleSelect.value === 'page-width') {
+                if (pdfDoc) {
                     queueRenderPage(currentPage);
                 }
             }, 100);
