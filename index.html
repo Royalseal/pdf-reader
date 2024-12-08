@@ -37,12 +37,17 @@
             overflow: auto;
             position: relative;
             -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         
         #pdf-render {
             width: 100%;
             height: auto;
             display: block;
+            max-width: 100vw;
+            object-fit: contain;
         }
         
         .controls {
@@ -116,6 +121,15 @@
             .page-info {
                 margin: 5px 0;
             }
+            
+            #pdf-render {
+                width: 100%;
+                margin: 0 auto;
+            }
+            
+            .container {
+                height: calc(100vh - env(safe-area-inset-bottom));
+            }
         }
     </style>
 </head>
@@ -166,15 +180,28 @@
                 const canvas = pdfRender;
                 const context = canvas.getContext('2d');
                 
-                // 计算适合容器宽度的缩放比例
+                // 获取容器宽度
                 const containerWidth = pdfContainer.clientWidth;
-                const pageWidth = page.getViewport({scale: 1.0}).width;
-                const scale = containerWidth / pageWidth;
+                
+                // 获取PDF页面原始尺寸
+                const originalViewport = page.getViewport({ scale: 1.0 });
+                
+                // 计算合适的缩放比例
+                let scale = containerWidth / originalViewport.width;
+                
+                // 对于移动设备，调整缩放比例
+                if (window.innerWidth <= 600) {
+                    scale = (window.innerWidth * 0.95) / originalViewport.width; // 留出一些边距
+                }
+                
                 const viewport = page.getViewport({ scale: scale });
 
+                // 设置canvas尺寸
                 const pixelRatio = window.devicePixelRatio || 1;
                 canvas.width = viewport.width * pixelRatio;
                 canvas.height = viewport.height * pixelRatio;
+                
+                // 设置显示尺寸
                 canvas.style.width = viewport.width + 'px';
                 canvas.style.height = viewport.height + 'px';
 
@@ -266,6 +293,15 @@
                 errorMsg.style.display = 'block';
                 errorMsg.textContent = `PDF加载失败: ${error.message}`;
             });
+
+        // 添加屏幕方向变化监听
+        window.addEventListener('orientationchange', function() {
+            setTimeout(function() {
+                if (pdfDoc) {
+                    queueRenderPage(currentPage);
+                }
+            }, 100);
+        });
     </script>
 </body>
 </html>
